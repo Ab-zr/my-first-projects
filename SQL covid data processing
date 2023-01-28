@@ -1,0 +1,67 @@
+select *
+from `sales.covid`
+
+
+
+select location,date,population,total_cases,new_cases,total_deaths
+from `sales.covid` 
+
+ -- total cases vs total deaths
+
+
+select location,date,total_cases,total_deaths,(total_deaths/total_cases*100) as death_prcnt
+from `sales.covid` 
+-- where location like "%India%"
+
+-- countries with highest rate of infection
+
+select location,max(total_cases) as highest_inf,max((total_deaths/total_cases*100)) as max_inf_prcnt
+from sales.covid
+group by location
+order by max_inf_prcnt desc
+
+-- highest count of deaths per population
+
+select Location, max(cast(total_deaths as int)) as total_death_count
+from `sales.covid`
+where continent is not null
+group by Location
+order by total_death_count desc
+
+select *
+from `sales.vaccine` d
+join `sales.vaccine` v
+on d.location=v.location
+and d.date=v.date
+
+-- total populations vs vaccination
+
+select d.continent,d.location,d.date,d.population,v.new_vaccinations
+from `sales.covid` d
+join `sales.vaccine` v
+on d.location=v.location
+and d.date=v.date
+where d.continent is not null
+order by 1, 2
+
+-- for rolling vaccination in countries
+
+select d.continent,d.location,d.date,d.population,v.new_vaccinations,
+sum(cast(v.new_vaccinations as int)) over(partition by d.location order by d.location,d.date) as rolling_vac
+from `sales.covid` d
+join `sales.vaccine` v
+on d.location=v.location
+and d.date=v.date
+where d.continent is not null
+order by 1, 2
+
+-- percent population vaccinated
+create view prcnt_popvacc as
+select d.continent,d.location,d.date,d.population,v.new_vaccinations,
+sum(cast(v.new_vaccinations as int)) over(partition by d.location order by d.location,d.date) as rolling_vac
+from `sales.covid` d
+join `sales.vaccine` v
+on d.location=v.location
+and d.date=v.date
+where d.continent is not null
+
